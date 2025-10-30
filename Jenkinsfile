@@ -47,7 +47,7 @@ pipeline {
         stage('Deploy with Helm') {
             agent {
                 docker {
-                    image 'alpine/helm:3.14.0'
+                    image 'lachlanevenson/k8s-helm:3.14.0' // image có sẵn kubectl + helm
                     args '-v $HOME/.kube:/root/.kube --entrypoint=""'
                 }
             }
@@ -56,11 +56,8 @@ pipeline {
                     sh """
                         mkdir -p ~/.kube
                         cp \$KUBECONFIG_FILE ~/.kube/config
-
-                        # Kiểm tra kết nối tới cluster
                         echo "Checking Kubernetes connection..."
                         kubectl get nodes
-
                         echo "Deploying to Kubernetes with Helm..."
                         helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \\
                             --namespace ${KUBERNETES_NAMESPACE} --create-namespace \\
