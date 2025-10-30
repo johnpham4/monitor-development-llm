@@ -26,7 +26,6 @@ pipeline {
             steps {
                 script {
                     echo ">>> Building Docker image..."
-                    // giữ nguyên hoàn toàn
                     def img = docker.build(
                         "${DOCKER_REPOSITORY}:${IMAGE_TAG}",
                         "--build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} " +
@@ -46,21 +45,17 @@ pipeline {
         }
 
         stage('Deploy to Minikube') {
-            agent {
-                docker {
-                    image 'lachlanevenson/k8s-helm:latest' // image có kubectl + helm
-                    args "-v $HOME/.kube:/root/.kube:ro"   // mount kubeconfig
-                }
-            }
+            agent any  // chạy trực tiếp trên host Jenkins, không dùng container
             steps {
                 script {
                     echo ">>> Deploying to Minikube..."
 
-                    // kiểm tra kubectl hoạt động
+                    // kiểm tra kubectl/helm có hoạt động
                     sh 'kubectl version --client'
                     sh 'kubectl get nodes'
+                    sh 'helm version'
 
-                    // deploy bằng Helm
+                    // Helm deploy
                     sh """
                         helm upgrade --install txtapp ./helm \
                         --namespace model-serving --create-namespace \
