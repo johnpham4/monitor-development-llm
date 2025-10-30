@@ -23,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push Docker Image') {
+        stage('Build & Push') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -45,38 +45,33 @@ pipeline {
             }
         }
 
-        stage('Deploy to Minikube') {
+        stage('Deploy') {
             agent {
                 docker {
                     image 'fullstackdatascience/jenkins-k8s:lts'
-                    args '''
-                        -v /home/minhpham/.kube:/root/.kube:ro
-                        -v /home/minhpham/.minikube:/root/.minikube:ro
-                    '''
+                    args "-v $HOME/.kube/config:/root/.kube/config:ro"  // chỉ mount file kubeconfig
                 }
+            }
+            environment {
+                KUBECONFIG = "/root/.kube/config"
+                KUBECACHE = "/tmp/kube-cache"   // cache riêng cho container
             }
             steps {
-                script {
-                    sh '''
-                        echo ">>> Setting KUBECONFIG..."
-                        export KUBECONFIG=/root/.kube/config
+                sh '''
+                    mkdir -p $KUBECACHE
+                    export KUBECONFIG=$KUBECONFIG
+                    export KUBECACHE=$KUBECACHE
 
-                        echo ">>> Giving read permission to Minikube and kube config..."
-                        chmod -R a+r /root/.kube
-                        chmod -R a+r /root/.minikube
+                    echo ">>> Checking Kubernetes nodes..."
+                    kubectl get nodes
 
-                        echo ">>> Checking Kubernetes nodes..."
-                        kubectl get nodes
-
-                        echo ">>> Deploying with Helm..."
-                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                            --set image.repository=${DOCKER_REPOSITORY} \
-                            --set image.tag=${IMAGE_TAG}
-                    '''
-                }
+                    echo ">>> Deploying with Helm..."
+                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                        --set image.repository=${DOCKER_REPOSITORY} \
+                        --set image.tag=${IMAGE_TAG}
+                '''
             }
         }
-
     }
 }
