@@ -11,6 +11,7 @@ pipeline {
         KUBERNETES_NAMESPACE = "model-serving"
         HELM_CHART_PATH = './helm'
         IMAGE_TAG = "${BUILD_NUMBER}"
+
         DOCKER_REPOSITORY = "minhjohn427/fastapi_app"
         MODEL_NAME = "health-llm-gguf"
         AWS_ACCESS_KEY_ID = "${params.AWS_ACCESS_KEY_ID}"
@@ -22,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -35,6 +36,7 @@ pipeline {
                         "--build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} " +
                         "--build-arg MODEL_NAME=${MODEL_NAME} ."
                     )
+
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIAL_ID) {
                         img.push()
                         img.push('latest')
@@ -43,24 +45,36 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Minikube') {
             agent {
                 docker {
                     image 'fullstackdatascience/jenkins-k8s:lts'
-                    args '-v $HOME/.kube:/root/.kube'
+                    args '''
+                        -v /home/minhpham/.kube:/root/.kube:ro
+                        -v /home/minhpham/.minikube:/root/.minikube:ro
+                    '''
                 }
             }
             steps {
-                sh '''
-                    echo ">>> Checking Kubernetes nodes..."
-                    kubectl get nodes
+                script {
+                    sh '''
+                        echo ">>> Setting KUBECONFIG..."
+                        export KUBECONFIG=/root/.kube/config
 
-                    echo ">>> Deploying with Helm..."
-                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                      --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                      --set image.repository=${DOCKER_REPOSITORY} \
-                      --set image.tag=${IMAGE_TAG}
-                '''
+                        echo ">>> Giving read permission to Minikube and kube config..."
+                        chmod -R a+r /root/.kube
+                        chmod -R a+r /root/.minikube
+
+                        echo ">>> Checking Kubernetes nodes..."
+                        kubectl get nodes
+
+                        echo ">>> Deploying with Helm..."
+                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                            --set image.repository=${DOCKER_REPOSITORY} \
+                            --set image.tag=${IMAGE_TAG}
+                    '''
+                }
             }
         }
 
