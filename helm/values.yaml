@@ -1,0 +1,5 @@
+# Simple QA Chatbot Configuration
+image:
+  repository: minhjohn427/fastapi_app
+  pullPolicy: IfNotPresent
+  tag: "latest"

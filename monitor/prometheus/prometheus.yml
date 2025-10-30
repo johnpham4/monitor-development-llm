@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  # FastAPI Application Instance 1
+  - job_name: 'fastapi-app-1'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['host.docker.internal:8001']
+
+  # FastAPI Application Instance 2
+  - job_name: 'fastapi-app-2'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['host.docker.internal:8002']
+
+  # MLflow Server Monitoring
+  - job_name: 'mlflow-server'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['host.docker.internal:5002']
+
+  # Prometheus Self Monitoring
+  - job_name: 'prometheus'
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Grafana Monitoring
+  - job_name: 'grafana'
+    metrics_path: /metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['grafana:3000']

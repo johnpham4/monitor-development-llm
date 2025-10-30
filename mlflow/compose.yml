@@ -1,0 +1,64 @@
+services:
+  mlflow_db:
+    restart: always
+    image: mysql/mysql-server@sha256:5b40d96b11333570143d98d3a74100fefadb9abb17b27a95dbc9ad33544ec142
+    env_file:
+      - ../.env
+    container_name: mlflow_db_llm
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mlflow_db_data:/var/lib/mysql
+    networks:
+      - llm-monitor
+
+  mlflow_server:
+    restart: always
+    build: .
+    image: mlflow_server
+    container_name: mlflow_server
+    env_file:
+      - ../.env
+    ports:
+      - "5002:5000"
+    environment:
+      - MLFLOW_HTTP_REQUEST_POOL_MAXSIZE=50
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - MLFLOW_S3_ENDPOINT_URL=https://s3.ap-southeast-2.amazonaws.com
+    command: >
+      mlflow server
+        --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mlflow_db:3306/${MYSQL_DATABASE}
+        --artifacts-destination s3://mlflow-artifacts-monitor
+        --host 0.0.0.0
+        --port 5000
+    networks:
+      - llm-monitor
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    depends_on:
+      - mlflow_server
+    ports:
+      - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}
+    command: http mlflow_server:5000
+    networks:
+      - llm-monitor
+    restart: unless-stopped
+
+volumes:
+  mlflow_db_data:
+    driver: local
+
+networks:
+  llm-monitor:
+    name: llm-monitor
+    driver: bridge

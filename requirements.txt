@@ -1,0 +1,10 @@
+fastapi==0.119.1
+uvicorn[standard]==0.38.0
+pydantic==2.11.10
+llama-cpp-python==0.3.16
+prometheus-fastapi-instrumentator==7.1.0
+loguru==0.7.3
+gradio==5.49.1
+boto3==1.40.55
+python-dotenv==1.1.1
+mlflow==3.4.0

@@ -1,0 +1,37 @@
+version: '3.8'
+
+
+services:
+  fastapi-app:
+    container_name: fastapi_app
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - MLFLOW_TRACKING_URI=https://victoria-communicable-sometimes.ngrok-free.dev
+        - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+        - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+        - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+    environment:
+      - MLFLOW_TRACKING_URI=https://victoria-communicable-sometimes.ngrok-free.dev
+      - PYTHONUNBUFFERED=1
+      - INSTANCE_ID=instance
+      - INSTANCE_NAME=FastAPI-App
+    ports:
+      - "8001:8000"
+      - "7860:7860"
+    networks:
+      - llm-monitor
+      # - monitoring
+
+networks:
+  llm-monitor:
+    external: true
+  # monitoring:
+  #   external: true
+
+volumes:
+  mlflow_db_data:

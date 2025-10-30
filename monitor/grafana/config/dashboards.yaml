@@ -1,0 +1,16 @@
+apiVersion: 1
+
+providers:
+  # QA Chatbot Dashboards Provider
+- name: 'qa-chatbot-dashboards'
+  orgId: 1
+  folder: 'QA Chatbot Monitoring'
+  folderUid: 'qa-chatbot-folder'
+  type: file
+  disableDeletion: false
+  updateIntervalSeconds: 10
+  allowUiUpdates: true
+  options:
+    # <string, required> path to dashboard files on disk. Required when using the 'file' type
+    path: /opt/grafana/dashboards
+    foldersFromFilesStructure: true
