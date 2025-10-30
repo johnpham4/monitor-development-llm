@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: 'AWS Access Key')
-        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: 'AWS Secret Key')
+        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: '')
+        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: '')
     }
 
     environment {
