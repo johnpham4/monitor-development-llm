@@ -8,7 +8,6 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIAL_ID = 'dockerhub'
-        KUBECONFIG_CREDENTIAL_ID = 'kubeconfig'
         KUBERNETES_NAMESPACE = "model-serving"
         HELM_CHART_PATH = './helm'
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -48,12 +47,17 @@ pipeline {
             agent {
                 docker {
                     image 'fullstackdatascience/jenkins-k8s:lts'
-                    args '-v $HOME/.kube:/root/.kube --entrypoint=""'
+                    // Mount cả kubeconfig và minikube để kubectl có thể đọc cert
+                    args '-v $HOME/.kube:/root/.kube -v $HOME/.minikube:/root/.minikube --entrypoint=""'
                 }
             }
             steps {
                 sh """
+                    export KUBECONFIG=/root/.kube/config
+                    echo "Checking Kubernetes nodes..."
                     kubectl get nodes
+
+                    echo "Deploying with Helm..."
                     helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
                         --set image.repository=${DOCKER_REPOSITORY} \
                         --set image.tag=${IMAGE_TAG}
