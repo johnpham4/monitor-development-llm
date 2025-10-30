@@ -52,10 +52,15 @@ pipeline {
                 }
             }
             steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG_FILE')]) {
                     sh """
                         mkdir -p ~/.kube
-                        cp \$KUBECONFIG ~/.kube/config
+                        cp \$KUBECONFIG_FILE ~/.kube/config
+
+                        # Kiểm tra kết nối tới cluster
+                        echo "Checking Kubernetes connection..."
+                        kubectl get nodes
+
                         echo "Deploying to Kubernetes with Helm..."
                         helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \\
                             --namespace ${KUBERNETES_NAMESPACE} --create-namespace \\
