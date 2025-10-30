@@ -58,18 +58,34 @@ pipeline {
         }
 
         stage('Deploy') {
+            agent {
+                kubernetes {
+                    containerTemplate {
+                        name 'helm'                        // container để chạy helm
+                        image 'fullstackdatascience/jenkins-k8s:lts' // image chứa helm + kubectl
+                        imagePullPolicy 'Always'
+                        ttyEnabled true
+                        command 'cat'                     // giữ container chạy background
+                    }
+                }
+            }
             steps {
-                sh """
-                    echo ">>> Checking Kubernetes nodes..."
-                    kubectl get nodes
+                script {
+                    container('helm') {
+                        sh """
+                            echo '>>> Checking Kubernetes nodes'
+                            kubectl get nodes
 
-                    echo ">>> Deploying with Helm..."
-                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                        --set image.repository=${DOCKER_REPOSITORY} \
-                        --set image.tag=${IMAGE_TAG}
-                """
+                            echo '>>> Deploying with Helm'
+                            helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                                --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                                --set image.repository=${DOCKER_REPOSITORY} \
+                                --set image.tag=${IMAGE_TAG}
+                        """
+                    }
+                }
             }
         }
+
     }
 }
