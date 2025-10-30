@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: '')
-        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: '')
+        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: 'AWS Access Key')
+        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: 'AWS Secret Key')
     }
 
     environment {
@@ -26,8 +26,9 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
+                    echo "Building Docker image..."
                     def img = docker.build(
-                        "${DOCKER_REPOSITORY}:${IMAGE_TAG}",
+                        "${env.DOCKER_REPOSITORY}:${IMAGE_TAG}",
                         "--build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} " +
                         "--build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} " +
                         "--build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} " +
@@ -47,18 +48,19 @@ pipeline {
             agent {
                 docker {
                     image 'alpine/helm:3.14.0'
-                    args '-v $HOME/.kube:/root/.kube' // mount kubeconfig
+                    args '-v $HOME/.kube:/root/.kube --entrypoint=""'
                 }
             }
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
                     sh """
-                    mkdir -p /root/.kube
-                    cp \$KUBECONFIG /root/.kube/config
-                    helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \
-                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                        --set image.repository=${DOCKER_REPOSITORY} \
-                        --set image.tag=${IMAGE_TAG}
+                        mkdir -p ~/.kube
+                        cp \$KUBECONFIG ~/.kube/config
+                        echo "Deploying to Kubernetes with Helm..."
+                        helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \\
+                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \\
+                            --set image.repository=${DOCKER_REPOSITORY} \\
+                            --set image.tag=${IMAGE_TAG}
                     """
                 }
             }
