@@ -8,17 +8,16 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIAL_ID = 'dockerhub'
-        KUBERNETES_NAMESPACE = "model-serving"
-        HELM_CHART_PATH = './helm'
+        DOCKER_REPOSITORY = "minhjohn427/fastapi_app"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        DOCKER_REPOSITORY = "minhjohn427/fastapi_app"
         MODEL_NAME = "health-llm-gguf"
         AWS_ACCESS_KEY_ID = "${params.AWS_ACCESS_KEY_ID}"
         AWS_SECRET_ACCESS_KEY = "${params.AWS_SECRET_ACCESS_KEY}"
         AWS_DEFAULT_REGION = "ap-southeast-2"
         AWS_BUCKET_NAME = "mlflow-artifacts-monitor"
         MLFLOW_TRACKING_URI = "https://victoria-communicable-sometimes.ngrok-free.dev"
+        KUBECONFIG = "/root/.kube/config"
     }
 
     stages {
@@ -28,7 +27,7 @@ pipeline {
                 script {
                     echo ">>> Building Docker image..."
                     def img = docker.build(
-                        "${env.DOCKER_REPOSITORY}:${IMAGE_TAG}",
+                        "${DOCKER_REPOSITORY}:${IMAGE_TAG}",
                         "--build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} " +
                         "--build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} " +
                         "--build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} " +
@@ -46,26 +45,18 @@ pipeline {
         }
 
         stage('Deploy to Minikube') {
-            agent {
-                docker {
-                    // Vô hiệu hóa entrypoint để lệnh shell chạy được
-                    image 'lachlanevenson/k8s-helm:latest'
-                    args '--entrypoint="" -v $HOME/.kube:/root/.kube'
-                }
-            }
             steps {
                 script {
-                    echo ">>> Deploying to Minikube from Jenkins agent..."
-                    // Đảm bảo KUBECONFIG trỏ đúng
-                    sh 'export KUBECONFIG=/root/.kube/config'
+                    echo ">>> Deploying to Minikube from host..."
 
-                    echo ">>> Checking Kubernetes nodes..."
+                    // kiểm tra kubectl có hoạt động
+                    sh 'kubectl version --client'
                     sh 'kubectl get nodes'
 
-                    echo ">>> Deploying Helm chart..."
+                    // Helm deploy
                     sh """
-                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                        helm upgrade --install txtapp ./helm \
+                        --namespace model-serving --create-namespace \
                         --set image.repository=${DOCKER_REPOSITORY} \
                         --set image.tag=${IMAGE_TAG}
                     """
