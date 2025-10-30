@@ -42,23 +42,21 @@
                     }
                 }
             }
-
             stage('Deploy with Helm') {
-                agent {
-                    docker {
-                        image 'alpine/helm:3.14.0'
-                        args '-v $HOME/.kube:/root/.kube'
-                    }
-                }
                 steps {
                     withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
                         sh """
                             mkdir -p ~/.kube
                             cp \$KUBECONFIG ~/.kube/config
-                            helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \
-                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                            --set image.repository=${env.DOCKER_REPOSITORY} \
-                            --set image.tag=${IMAGE_TAG}
+                            docker run --rm \
+                                -v ~/.kube:/root/.kube \
+                                -v $(pwd):/workspace \
+                                -w /workspace \
+                                alpine/helm:3.14.0 \
+                                helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \
+                                    --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                                    --set image.repository=${env.DOCKER_REPOSITORY} \
+                                    --set image.tag=${IMAGE_TAG}
                         """
                     }
                 }
