@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: '')
-        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: '')
+        string(name: 'AWS_ACCESS_KEY_ID', defaultValue: '', description: 'AWS Access Key')
+        string(name: 'AWS_SECRET_ACCESS_KEY', defaultValue: '', description: 'AWS Secret Key')
     }
 
     environment {
@@ -23,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push Docker') {
+        stage('Build & Push') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -46,20 +46,24 @@ pipeline {
         }
 
         stage('Deploy to Minikube') {
+            agent {
+                docker {
+                    image 'lachlanevenson/k8s-helm:latest'
+                    args '-v $HOME/.kube:/root/.kube'
+                }
+            }
             steps {
                 script {
-                    echo ">>> Deploying to Minikube from host..."
-                    sh """
-                        export KUBECONFIG=$HOME/.kube/config
-                        echo ">>> Checking Kubernetes nodes..."
-                        kubectl get nodes
+                    sh '''
+                    echo ">>> Checking Kubernetes nodes..."
+                    kubectl get nodes
 
-                        echo ">>> Deploying with Helm..."
-                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                            --set image.repository=${DOCKER_REPOSITORY} \
-                            --set image.tag=${IMAGE_TAG}
-                    """
+                    echo ">>> Deploying with Helm..."
+                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                        --set image.repository=${DOCKER_REPOSITORY} \
+                        --set image.tag=${IMAGE_TAG}
+                    '''
                 }
             }
         }
