@@ -23,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push') {
+        stage('Build & Push Docker') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -45,27 +45,32 @@ pipeline {
             }
         }
 
-        stage('Deploy to Minikube') {
+        stage('Deploy with Helm') {
             agent {
                 docker {
-                    image 'lachlanevenson/k8s-helm:latest'
-                    args '-v $HOME/.kube:/root/.kube'
+                    image 'bitnami/kubectl:latest' // có shell + kubectl
+                    args '-v $HOME/.kube:/root/.kube' // mount kubeconfig nếu cần
                 }
             }
             steps {
-                script {
-                    sh '''
+                sh '''
                     echo ">>> Checking Kubernetes nodes..."
                     kubectl get nodes
 
-                    echo ">>> Deploying with Helm..."
+                    echo ">>> Installing/Upgrading Helm chart..."
+                    # Cài Helm nếu chưa có
+                    if ! command -v helm &> /dev/null
+                    then
+                        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+                    fi
+
                     helm upgrade --install txtapp ${HELM_CHART_PATH} \
                         --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
                         --set image.repository=${DOCKER_REPOSITORY} \
                         --set image.tag=${IMAGE_TAG}
-                    '''
-                }
+                '''
             }
         }
+
     }
 }
