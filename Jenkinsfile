@@ -23,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push') {
+        stage('Build & Push Docker') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -45,32 +45,22 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            agent {
-                docker {
-                    image 'fullstackdatascience/jenkins-k8s:lts'
-                    args "-v $HOME/.kube/config:/root/.kube/config:ro"  // chỉ mount file kubeconfig
-                }
-            }
-            environment {
-                KUBECONFIG = "/root/.kube/config"
-                KUBECACHE = "/tmp/kube-cache"   // cache riêng cho container
-            }
+        stage('Deploy to Minikube') {
             steps {
-                sh '''
-                    mkdir -p $KUBECACHE
-                    export KUBECONFIG=$KUBECONFIG
-                    export KUBECACHE=$KUBECACHE
+                script {
+                    echo ">>> Deploying to Minikube from host..."
+                    sh """
+                        export KUBECONFIG=$HOME/.kube/config
+                        echo ">>> Checking Kubernetes nodes..."
+                        kubectl get nodes
 
-                    echo ">>> Checking Kubernetes nodes..."
-                    kubectl get nodes
-
-                    echo ">>> Deploying with Helm..."
-                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
-                        --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                        --set image.repository=${DOCKER_REPOSITORY} \
-                        --set image.tag=${IMAGE_TAG}
-                '''
+                        echo ">>> Deploying with Helm..."
+                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                            --set image.repository=${DOCKER_REPOSITORY} \
+                            --set image.tag=${IMAGE_TAG}
+                    """
+                }
             }
         }
     }
