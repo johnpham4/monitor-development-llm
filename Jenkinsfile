@@ -43,28 +43,33 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy') {
-            agent {
-                kubernetes {
-                    containerTemplate {
-                        name 'helm'
-                        image 'fullstackdatascience/jenkins-k8s:lts'
-                        imagePullPolicy 'Always'
+            steps {
+                script {
+                    podTemplate(containers: [
+                        containerTemplate(
+                            name: 'helm',
+                            image: 'fullstackdatascience/jenkins-k8s:lts',
+                            ttyEnabled: true,
+                            command: 'cat'
+                        )
+                    ]) {
+                        node(POD_LABEL) {
+                            container('helm') {
+                                sh """
+                                    kubectl get nodes
+                                    helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                                        --set image.repository=${DOCKER_REPOSITORY} \
+                                        --set image.tag=${IMAGE_TAG}
+                                """
+                            }
+                        }
                     }
                 }
             }
-            steps {
-                container('helm') {
-                    // Nếu Jenkins chạy trong cluster, dùng in-cluster kubeconfig
-                    sh """
-                        kubectl get nodes
-                        helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                            --set image.repository=${DOCKER_REPOSITORY} \
-                            --set image.tag=${IMAGE_TAG}
-                    """
-                }
-            }
         }
+
 
     }
 }
