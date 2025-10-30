@@ -23,7 +23,7 @@ pipeline {
     }
 
     stages {
-        stage('Build & Push Docker Image') {
+        stage('Build & Push') {
             steps {
                 script {
                     echo "Building Docker image..."
@@ -45,31 +45,21 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                script {
-                    podTemplate(containers: [
-                        containerTemplate(
-                            name: 'helm',
-                            image: 'fullstackdatascience/jenkins-k8s:lts',
-                            ttyEnabled: true,
-                            command: 'cat'
-                        )
-                    ]) {
-                        node(POD_LABEL) {
-                            container('helm') {
-                                sh """
-                                    kubectl get nodes
-                                    helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
-                                        --set image.repository=${DOCKER_REPOSITORY} \
-                                        --set image.tag=${IMAGE_TAG}
-                                """
-                            }
-                        }
-                    }
+            agent {
+                docker {
+                    image 'fullstackdatascience/jenkins-k8s:lts'
+                    args '-v $HOME/.kube:/root/.kube --entrypoint=""'
                 }
             }
+            steps {
+                sh """
+                    kubectl get nodes
+                    helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                        --set image.repository=${DOCKER_REPOSITORY} \
+                        --set image.tag=${IMAGE_TAG}
+                """
+            }
         }
-
 
     }
 }
