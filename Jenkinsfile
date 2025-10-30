@@ -43,21 +43,31 @@ pipeline {
                 }
             }
         }
-
         stage('Deploy with Helm') {
             agent {
                 docker {
-                    image 'lachlanevenson/k8s-helm:3.14.0' // image có sẵn kubectl + helm
+                    image 'alpine/helm:3.14.0'
                     args '-v $HOME/.kube:/root/.kube --entrypoint=""'
                 }
             }
             steps {
                 withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG_FILE')]) {
                     sh """
+                        # Cài kubectl
+                        apk add --no-cache curl bash
+                        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                        chmod +x kubectl
+                        mv kubectl /usr/local/bin/
+
+                        # Setup kubeconfig
                         mkdir -p ~/.kube
                         cp \$KUBECONFIG_FILE ~/.kube/config
+
+                        # Kiểm tra kết nối
                         echo "Checking Kubernetes connection..."
                         kubectl get nodes
+
+                        # Deploy Helm
                         echo "Deploying to Kubernetes with Helm..."
                         helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \\
                             --namespace ${KUBERNETES_NAMESPACE} --create-namespace \\
@@ -67,5 +77,6 @@ pipeline {
                 }
             }
         }
+
     }
 }
