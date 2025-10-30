@@ -43,31 +43,23 @@ pipeline {
                 }
             }
         }
-        stage('Deploy with Helm') {
+        stage('Deploy') {
             agent {
-                docker {
-                    image 'alpine/helm:3.14.0'
-                    args '-v $HOME/.kube:/root/.kube --entrypoint=""'
+                kubernetes {
+                    containerTemplate {
+                        name 'helm'
+                        image 'fullstackdatascience/jenkins-k8s:lts'
+                        imagePullPolicy 'Always'
+                    }
                 }
             }
             steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG_FILE')]) {
+                container('helm') {
+                    // Nếu Jenkins chạy trong cluster, dùng in-cluster kubeconfig
                     sh """
-                        apk add --no-cache curl bash
-                        curl -LO "https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                        chmod +x kubectl
-                        mv kubectl /usr/local/bin/
-
-                        mkdir -p ~/.kube
-                        cp \$KUBECONFIG_FILE ~/.kube/config
-
-                        echo "Checking Kubernetes connection..."
                         kubectl get nodes
-
-                        echo "Deploying to Kubernetes with Helm..."
-                        helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \\
-                            --namespace ${KUBERNETES_NAMESPACE} --create-namespace \\
-                            --set image.repository=${DOCKER_REPOSITORY} \\
+                        helm upgrade --install txtapp ${HELM_CHART_PATH} --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                            --set image.repository=${DOCKER_REPOSITORY} \
                             --set image.tag=${IMAGE_TAG}
                     """
                 }
