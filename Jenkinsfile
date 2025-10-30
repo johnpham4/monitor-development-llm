@@ -11,7 +11,6 @@ pipeline {
         KUBERNETES_NAMESPACE = "model-serving"
         HELM_CHART_PATH = './helm'
         IMAGE_TAG = "${BUILD_NUMBER}"
-
         DOCKER_REPOSITORY = "minhjohn427/fastapi_app"
         MODEL_NAME = "health-llm-gguf"
         AWS_ACCESS_KEY_ID = "${params.AWS_ACCESS_KEY_ID}"
@@ -36,7 +35,6 @@ pipeline {
                         "--build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} " +
                         "--build-arg MODEL_NAME=${MODEL_NAME} ."
                     )
-
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIAL_ID) {
                         img.push()
                         img.push('latest')
@@ -45,23 +43,11 @@ pipeline {
             }
         }
 
-        stage('Setup Minikube Docker Env') {
-            steps {
-                script {
-                    echo ">>> Setting up Minikube Docker environment..."
-                    // Gắn Docker của Minikube để Jenkins có thể dùng kubectl
-                    sh 'eval $(minikube -p minikube docker-env)'
-                    sh 'kubectl config use-context minikube'
-                    sh 'kubectl cluster-info'
-                }
-            }
-        }
-
         stage('Deploy') {
             agent {
                 docker {
                     image 'fullstackdatascience/jenkins-k8s:lts'
-                    args '-v $HOME/.kube:/root/.kube' // mount kubeconfig
+                    args '-v $HOME/.kube:/root/.kube'
                 }
             }
             steps {
@@ -70,14 +56,13 @@ pipeline {
                     kubectl get nodes
 
                     echo ">>> Deploying with Helm..."
-                    helm upgrade --install txtapp ./helm \
-                    --namespace model-serving --create-namespace \
-                    --set image.repository=${DOCKER_REPOSITORY} \
-                    --set image.tag=${IMAGE_TAG}
+                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                      --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
+                      --set image.repository=${DOCKER_REPOSITORY} \
+                      --set image.tag=${IMAGE_TAG}
                 '''
             }
         }
-
 
     }
 }
