@@ -23,7 +23,7 @@ pipeline {
 
     stages {
 
-        stage('Build & Push Docker') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
                     echo ">>> Building Docker image..."
@@ -45,32 +45,32 @@ pipeline {
             }
         }
 
-        stage('Deploy with Helm') {
+        stage('Deploy to Minikube') {
             agent {
                 docker {
-                    image 'bitnami/kubectl:latest' // có shell + kubectl
-                    args '-v $HOME/.kube:/root/.kube' // mount kubeconfig nếu cần
+                    // Vô hiệu hóa entrypoint để lệnh shell chạy được
+                    image 'lachlanevenson/k8s-helm:latest'
+                    args '--entrypoint="" -v $HOME/.kube:/root/.kube'
                 }
             }
             steps {
-                sh '''
+                script {
+                    echo ">>> Deploying to Minikube from Jenkins agent..."
+                    // Đảm bảo KUBECONFIG trỏ đúng
+                    sh 'export KUBECONFIG=/root/.kube/config'
+
                     echo ">>> Checking Kubernetes nodes..."
-                    kubectl get nodes
+                    sh 'kubectl get nodes'
 
-                    echo ">>> Installing/Upgrading Helm chart..."
-                    # Cài Helm nếu chưa có
-                    if ! command -v helm &> /dev/null
-                    then
-                        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-                    fi
-
-                    helm upgrade --install txtapp ${HELM_CHART_PATH} \
+                    echo ">>> Deploying Helm chart..."
+                    sh """
+                        helm upgrade --install txtapp ${HELM_CHART_PATH} \
                         --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
                         --set image.repository=${DOCKER_REPOSITORY} \
                         --set image.tag=${IMAGE_TAG}
-                '''
+                    """
+                }
             }
         }
-
     }
 }
