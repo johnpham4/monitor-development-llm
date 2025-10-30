@@ -54,7 +54,7 @@ pipeline {
                             -v \$(pwd):/workspace \
                             -w /workspace \
                             alpine/helm:3.14.0 \
-                            helm upgrade --install qa-chatbot ${HELM_CHART_PATH} \
+                            upgrade --install qa-chatbot ${HELM_CHART_PATH} \
                                 --namespace ${KUBERNETES_NAMESPACE} --create-namespace \
                                 --set image.repository=${env.DOCKER_REPOSITORY} \
                                 --set image.tag=${IMAGE_TAG}
