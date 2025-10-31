@@ -7,7 +7,6 @@ pipeline {
     }
 
     environment {
-        DOCKER_CREDENTIAL_ID = 'dockerhub'
         DOCKER_REPOSITORY = "minhjohn427/fastapi_app"
         IMAGE_TAG = "${BUILD_NUMBER}"
 
@@ -26,36 +25,32 @@ pipeline {
             steps {
                 script {
                     echo ">>> Building Docker image..."
-                    def img = docker.build(
-                        "${DOCKER_REPOSITORY}:${IMAGE_TAG}",
-                        "--build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} " +
-                        "--build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} " +
-                        "--build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} " +
-                        "--build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} " +
-                        "--build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} " +
-                        "--build-arg MODEL_NAME=${MODEL_NAME} ."
-                    )
+                    sh """
+                        docker build -t ${DOCKER_REPOSITORY}:${IMAGE_TAG} \
+                            --build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
+                            --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+                            --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+                            --build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+                            --build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} \
+                            --build-arg MODEL_NAME=${MODEL_NAME} .
 
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIAL_ID) {
-                        img.push()
-                        img.push('latest')
-                    }
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push ${DOCKER_REPOSITORY}:${IMAGE_TAG}
+                        docker tag ${DOCKER_REPOSITORY}:${IMAGE_TAG} ${DOCKER_REPOSITORY}:latest
+                        docker push ${DOCKER_REPOSITORY}:latest
+                    """
                 }
             }
         }
 
         stage('Deploy to Minikube') {
-            agent any  // chạy trực tiếp trên host Jenkins, không dùng container
             steps {
                 script {
                     echo ">>> Deploying to Minikube..."
-
-                    // kiểm tra kubectl/helm có hoạt động
                     sh 'kubectl version --client'
                     sh 'kubectl get nodes'
                     sh 'helm version'
 
-                    // Helm deploy
                     sh """
                         helm upgrade --install txtapp ./helm \
                         --namespace model-serving --create-namespace \
