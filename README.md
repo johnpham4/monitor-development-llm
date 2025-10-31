@@ -37,3 +37,5 @@ Secret Text → paste token từ bước 2
 
 Test Connection
 ✓ chọn “Disable https certificate check” nếu self-signed
+
+vào tạo global credential dockerhub

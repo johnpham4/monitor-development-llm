@@ -33,12 +33,11 @@ pipeline {
                             --build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
                             --build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} \
                             --build-arg MODEL_NAME=${MODEL_NAME} .
-
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                        docker push ${DOCKER_REPOSITORY}:${IMAGE_TAG}
-                        docker tag ${DOCKER_REPOSITORY}:${IMAGE_TAG} ${DOCKER_REPOSITORY}:latest
-                        docker push ${DOCKER_REPOSITORY}:latest
                     """
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        img.push()
+                        img.push('latest')
+                    }
                 }
             }
         }
