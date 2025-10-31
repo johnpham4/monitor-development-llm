@@ -1,0 +1,23 @@
+
+kubectl apply -f jenkins-deployment.yaml
+kubectl apply -f jenkins-service.yaml
+minikube service jenkins -n jenkins
+kubectl exec -n jenkins -it jenkins-657fdfb988-nw8bc -- /bin/cat /var/jenkins_home/secrets/initialAdminPassword
+
+
+# tạo namespace Jenkins nếu chưa có
+kubectl create namespace jenkins
+
+# tạo service account
+kubectl create sa jenkins -n jenkins
+
+# tạo token
+kubectl create token jenkins -n jenkins --duration=8760h
+
+# tạo rolebinding
+kubectl create rolebinding jenkins-admin-binding \
+  --clusterrole=admin \
+  --serviceaccount=jenkins:jenkins \
+  --namespace=jenkins
+
+eyJhbGciOiJSUzI1NiIsImtpZCI6InBvTUhXdVlHdHBlQ2ZjV25SMkNLNERkT04xQm5JUnVaaFdCWU1wQlZRTlUifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiXSwiZXhwIjoxNzkzNDI0OTA4LCJpYXQiOjE3NjE4ODg5MDgsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwianRpIjoiNWQ0ZWY2YmYtODY5Yy00NjU0LWE5ZDEtMTBlMTJiZmFmMTliIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJqZW5raW5zIiwic2VydmljZWFjY291bnQiOnsibmFtZSI6ImplbmtpbnMiLCJ1aWQiOiI1MjkwZjZiNC0yYWY0LTRlODMtYjdmOC1jN2RmNmRjMDFhNWIifX0sIm5iZiI6MTc2MTg4ODkwOCwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmplbmtpbnM6amVua2lucyJ9.q8gMvuVFv7ZhR8g7_xvVYNXmJothyjGuor4a5CXgEo71dBlEPmt4gryOBwLKkYgwmSVo7RTCHWAAjdXNlNVed5IL3ogf2QR0atsLL-BmNItIM_4vMDkypqDRHfQI-6cOmOsjrndGtcq9ZH4o-lmekpuNPgotKMoV8Bp_ZNpXIPeJFMbSUtFVC00eIUs67bE5tIkpeKYGqA5JLoILfjCHopBZsuxfbIZCloWilLu7rrmQ19vFV8v6lo4EW1MN1fEx5fq7UE9cuufWHNG7lV6y0IEK2k7_WxPnEWRiecN-BjAKItlLa6uINGImF2GKhA1Mn7JsxLmr4RI4I71fJ40oqg

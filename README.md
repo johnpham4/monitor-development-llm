@@ -23,3 +23,7 @@ make ngrok && make ml-platform-up && make ml-platform-logs
 apt update -y && apt install -y curl
 curl http://mlflow_server:5000
 ```
+
+jenkins
+
+install kubernetes plugin

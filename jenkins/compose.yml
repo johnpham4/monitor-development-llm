@@ -1,23 +1,21 @@
 version: "3.9"
 
-volumes:
-  jenkins_home:
-
 services:
   jenkins:
-    build: .
+    build:
+      context: .
+    container_name: jenkins-master
     privileged: true
     user: root
     environment:
       - JENKINS_ADMIN_ID=admin
       - JENKINS_ADMIN_PASSWORD=admin123
-      - KUBECONFIG=/root/.kube/config
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - "8080:8080"   # Jenkins UI
+      - "50000:50000" # Jenkins agent
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /home/minh/.kube:/root/.kube:ro  # mount kubeconfig host
-    container_name: jenkins-master
-    restart: unless-stopped
+      - /var/run/docker.sock:/var/run/docker.sock # nếu cần chạy docker trong container
+
+volumes:
+  jenkins_home:

@@ -47,6 +47,9 @@ jenkins_server:
 jenkins_down:
 	docker compose -f jenkins/compose.yml down
 
+jenkins_down:
+	docker compose -f jenkins/compose.yml down
+
 jenkins_password:
 	docker exec -it jenkins-master cat /var/jenkins_home/secrets/initialAdminPassword
 
