@@ -25,15 +25,15 @@ pipeline {
             steps {
                 script {
                     echo ">>> Building Docker image..."
-                    sh """
-                        docker build -t ${DOCKER_REPOSITORY}:${IMAGE_TAG} \
-                            --build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
-                            --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                            --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                            --build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                            --build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} \
-                            --build-arg MODEL_NAME=${MODEL_NAME} .
-                    """
+                    def img = docker.build("${DOCKER_REPOSITORY}:${IMAGE_TAG}", """
+                        --build-arg MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
+                        --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+                        --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+                        --build-arg AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
+                        --build-arg AWS_BUCKET_NAME=${AWS_BUCKET_NAME} \
+                        --build-arg MODEL_NAME=${MODEL_NAME} .
+                    """)
+
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
                         img.push()
                         img.push('latest')
