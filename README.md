@@ -26,11 +26,9 @@ curl http://mlflow_server:5000
 
 jenkins
 
-install kubernetes plugin
+install kubernetes, Docker Pipeline. plugin
 
 set kuberbenete nội bộ là https://kubernetes.default.svc
-
-disable https certificate pack
 
 Credentials
 Secret Text → paste token từ bước 2
@@ -38,4 +36,6 @@ Secret Text → paste token từ bước 2
 Test Connection
 ✓ chọn “Disable https certificate check” nếu self-signed
 
-vào tạo global credential dockerhub
+vào tạo global credential id dockerhub password = token, username = username dockerhub
+
+add websocket, jenkins url

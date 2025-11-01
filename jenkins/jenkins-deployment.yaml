@@ -13,15 +13,32 @@ spec:
       labels:
         app: jenkins
     spec:
-      serviceAccountName: jenkins
       containers:
-        - name: jenkins
-          image: jenkins/jenkins:lts
-          ports:
-            - containerPort: 8080
-            - containerPort: 50000
-          env:
-            - name: JENKINS_ADMIN_ID
-              value: "admin"
-            - name: JENKINS_ADMIN_PASSWORD
-              value: "admin123"
+      - name: jenkins
+        image: jenkins-custom:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        - containerPort: 50000
+        env:
+        - name: JENKINS_ADMIN_ID
+          value: "admin"
+        - name: JENKINS_ADMIN_PASSWORD
+          value: "admin123"
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock

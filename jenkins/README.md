@@ -1,12 +1,18 @@
 
+# Build
+eval $(minikube docker-env)
+docker build -t jenkins-custom:latest .
+
+
+# Deploy
+kubectl create namespace jenkins
 kubectl apply -f jenkins-deployment.yaml
 kubectl apply -f jenkins-service.yaml
+
+# Access
 minikube service jenkins -n jenkins
 kubectl exec -n jenkins -it jenkins-657fdfb988-nw8bc -- /bin/cat /var/jenkins_home/secrets/initialAdminPassword
 
-
-# tạo namespace Jenkins nếu chưa có
-kubectl create namespace jenkins
 
 # tạo service account
 kubectl create sa jenkins -n jenkins
