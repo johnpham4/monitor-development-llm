@@ -36,8 +36,9 @@ pipeline {
                     """
 
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        img.push()
-                        img.push('latest')
+                        sh "docker push ${DOCKER_REPOSITORY}:${IMAGE_TAG}"
+                        sh "docker tag ${DOCKER_REPOSITORY}:${IMAGE_TAG} ${DOCKER_REPOSITORY}:latest"
+                        sh "docker push ${DOCKER_REPOSITORY}:latest"
                     }
                 }
             }
