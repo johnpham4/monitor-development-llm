@@ -39,3 +39,8 @@ Test Connection
 vào tạo global credential id dockerhub password = token, username = username dockerhub
 
 add websocket, jenkins url
+# Terminal 1: Backend API
+kubectl port-forward svc/txtapp 8000:8000 -n model-serving
+
+# Terminal 2: Frontend Gradio
+kubectl port-forward svc/txtapp 7860:7860 -n model-serving

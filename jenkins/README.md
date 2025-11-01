@@ -11,7 +11,7 @@ kubectl apply -f jenkins-service.yaml
 
 # Access
 minikube service jenkins -n jenkins
-kubectl exec -n jenkins -it jenkins-657fdfb988-nw8bc -- /bin/cat /var/jenkins_home/secrets/initialAdminPassword
+kubectl exec -n jenkins -it jenkin-podId -- /bin/cat /var/jenkins_home/secrets/initialAdminPassword
 
 
 # tạo service account
