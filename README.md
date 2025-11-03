@@ -4,6 +4,8 @@
 
 Our project focuses on implementing a Vietnamese Legal Question-Answering chatbot using fine-tuned LLM models in GGUF format. The system leverages MLOps practices with FastAPI backend, Gradio frontend, and comprehensive CI/CD pipeline using Jenkins and Kubernetes. This chatbot aims to provide accurate legal consultation in Vietnamese, making legal information more accessible to users through an intuitive web interface.
 
+![Chatbot Demo](images/chatbot.gif)
+
 ## Table of Contents
 
 1. **Vietnamese Legal QA Chatbot**
@@ -99,7 +101,7 @@ For detailed training process, see the notebook: [`notebook/000-model_finetuning
 
 | MLflow Experiment Tracking | MLflow Metrics Visualization |
 |:---------------------------:|:-----------------------------:|
-| ![MLflow Dashboard](images/mlflow_model_registeration.jpg) | ![MLflow Metrics](images/mlflow_model_registeration.jpg) |
+| ![MLflow Dashboard](images/mlflow_model_registeration.jpg) | ![MLflow Metrics](images/mlflow_metric.jpg) |
 
 ## Convert to GGUF Format
 
@@ -165,7 +167,7 @@ Access the monitoring dashboards:
 
 The Grafana dashboard displays application metrics, request rates, and system performance.
 
-*[Image placeholder: Grafana dashboard]*
+![Grafana Dashboard](images/monitor.jpg)
 
 ## CI/CD
 
@@ -177,7 +179,6 @@ For detailed Jenkins configuration, see [jenkins/README.md](jenkins/README.md)
 
 *[Image placeholder: Jenkins pipeline execution]*
 
-*[Image placeholder: Local architecture diagram]*
 
 # Production
 
