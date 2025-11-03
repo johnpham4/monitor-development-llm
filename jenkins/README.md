@@ -53,6 +53,7 @@ kubectl create token jenkins -n jenkins --duration=8760h
 ```
 
 **In Jenkins UI:**
+### Set up Minikube connection
 1. Go to `Manage Jenkins` → `Clouds` → `New Cloud` → `Kubernetes`
 2. **Kubernetes URL:** `https://kubernetes.default.svc`
 3. **Credentials:** Add → Secret text → Paste token from above
@@ -70,11 +71,6 @@ kubectl create token jenkins -n jenkins --duration=8760h
 3. **ID:** `dockerhub`
 4. **Username:** Your DockerHub username
 5. **Password:** Your DockerHub access token
-
-### Configure Build Environment Variables
-
-1. Go to `Manage Jenkins` → `Configure System` → `Global properties`
-
 
 ## 5. Create Pipeline Job
 

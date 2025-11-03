@@ -9,12 +9,18 @@ Our project focuses on implementing a Vietnamese Legal Question-Answering chatbo
 1. **Vietnamese Legal QA Chatbot**
    - Introduction
    - Project Structure
-2. **Local**
+2. **Setup Amazon S3 & MLflow**
+   - Configure AWS S3 Bucket
+   - Setup MLflow Tracking Server
+3. **Finetune Tiny Model**
+   - Model Finetuning Process
+   - Convert to GGUF Format
+4. **Local**
    - Demo
    - Running in Docker
    - Monitoring
    - CI/CD
-3. **Production**
+5. **Production**
    - Deploying to Kubernetes
 
 ## Project Structure
@@ -44,6 +50,72 @@ monitor_2_deployment/
 ├── README.md                      - This README file
 └── requirements.txt               - Python requirements file
 ```
+
+# Setup Amazon S3 & MLflow
+
+## Configure AWS S3 Bucket
+
+Before working with the model training and conversion pipeline, set up AWS S3 for artifact storage:
+
+```bash
+# Create .env file with AWS credentials
+cp .env.example .env
+```
+
+Add the following variables to your `.env` file:
+
+```env
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_DEFAULT_REGION=ap-southeast-2
+AWS_BUCKET_NAME=mlflow-artifacts-monitor
+MLFLOW_TRACKING_URI=https://your-ngrok-url.ngrok-free.dev
+```
+
+**S3 Bucket Setup:**
+1. Create an S3 bucket for MLflow artifacts storage
+2. Configure IAM user with S3 access permissions
+3. Generate access keys for programmatic access
+
+**Mlflow setup**
+1. Run the command in ubuntu terminal: make mlflow_server
+2. Get the mlflow expose url through ngrok: mlflow mlfow_url
+3. [Optional] - expose mlflow by cloudfare: make cloudfare
+
+# Finetune Tiny Model
+
+## Model Finetuning Process
+
+Our Vietnamese Legal QA model is fine-tuned using state-of-the-art techniques to understand Vietnamese legal context and provide accurate answers. The training process includes:
+
+- **Base Model:** Pre-trained Vietnamese language model
+- **Dataset:** Vietnamese legal documents and Q&A pairs
+- **Fine-tuning:** LoRA (Low-Rank Adaptation) for efficient training
+- **Model Store** Store heavy weight model on Amazon S3
+- **Tracking:** MLflow for experiment management and model versioning
+- **Model Regsiteration** Register Amazon S3 model path to mlflow client
+
+For detailed training process, see the notebook: [`notebook/000-model_finetuning.ipynb`](notebook/000-model_finetuning.ipynb)
+
+| MLflow Experiment Tracking | MLflow Metrics Visualization |
+|:---------------------------:|:-----------------------------:|
+| ![MLflow Dashboard](images/mlflow_model_registeration.jpg) | ![MLflow Metrics](images/mlflow_model_registeration.jpg) |
+
+## Convert to GGUF Format
+
+### Why Convert to GGUF?
+
+GGUF (GPT-Generated Unified Format) is optimized for inference with several advantages:
+
+- **Efficient Memory Usage:** Reduced RAM requirements for deployment
+- **Fast Inference:** Optimized for CPU inference without GPU dependency
+- **Quantization Support:** Reduced model size with minimal quality loss
+- **Cross-Platform:** Compatible with llama.cpp and various deployment environments
+
+### Conversion Process
+
+Use the model conversion notebook: [`notebook/001-model_converting.ipynb`](notebook/001-model_converting.ipynb)
+
 
 # Local
 
@@ -103,15 +175,6 @@ We have build and deploy stages in our CI/CD pipeline using Jenkins. The pipelin
 
 For detailed Jenkins configuration, see [jenkins/README.md](jenkins/README.md)
 
-**Required Jenkins Plugins:**
-- Docker Pipeline
-- Kubernetes
-- Kubernetes CLI
-
-**Setup Credentials:**
-- DockerHub credentials
-- Kubernetes service account token
-
 *[Image placeholder: Jenkins pipeline execution]*
 
 *[Image placeholder: Local architecture diagram]*
@@ -145,6 +208,9 @@ Deploy the application to Kubernetes cluster using Jenkins CI/CD pipeline:
 ```bash
 # Check deployment status
 kubectl get pods -n model-serving
+
+# check service status
+kubectl get svc -n model-serving
 
 # Access application
 kubectl port-forward svc/txtapp 7860:7860 -n model-serving
