@@ -135,22 +135,14 @@ First, set up the environment and install required packages:
 To run the application in a Docker container, build the Docker image:
 
 ```bash
-docker build -t vietnamese-legal-qa .
+make app
 ```
 
-After building the Docker image, run the container:
-
-```bash
-docker run -p 8000:8000 -p 7860:7860 vietnamese-legal-qa
-```
-
-*[Image placeholder: Docker container running]*
+![Local downloading process](images/local_model_download.jpg)
 
 The application will be available at:
 - **Frontend:** `http://localhost:7860`
 - **API Documentation:** `http://localhost:8000/docs`
-
-*[Image placeholder: FastAPI docs interface]*
 
 ## Monitoring
 
@@ -177,8 +169,19 @@ We have build and deploy stages in our CI/CD pipeline using Jenkins. The pipelin
 
 For detailed Jenkins configuration, see [jenkins/README.md](jenkins/README.md)
 
-*[Image placeholder: Jenkins pipeline execution]*
 
+**Execute Pipeline**
+
+![Model Downloading](images/jenkins_download_model.jpg) ![Deploying to Minikube](images/jenkins_deployment_success.jpg)
+
+### CI/CD Pipeline Flow
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Code     │───▶│   Jenkins   │───▶│   Docker    │───▶│ Kubernetes  │
+│   (GitHub)  │    │  Pipeline   │    │   Build     │    │   Deploy    │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
 
 # Production
 
@@ -237,17 +240,6 @@ The production application will be available at `http://localhost:7860`
                     │   (model-serving ns)      │
                     └───────────────────────────┘
 ```
-
-### CI/CD Pipeline Flow
-
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    Code     │───▶│   Jenkins   │───▶│   Docker    │───▶│ Kubernetes  │
-│   (GitHub)  │    │  Pipeline   │    │   Build     │    │   Deploy    │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-```
-
-*[Image placeholder: Production architecture diagram]*
 
 ---
 
