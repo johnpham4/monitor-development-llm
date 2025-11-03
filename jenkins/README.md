@@ -4,10 +4,12 @@
 ## 1. Build Jenkins Image
 
 ```bash
+minikube start
 # Switch to Minikube Docker environment
 eval $(minikube docker-env)
 
 # Build custom Jenkins image with Docker + kubectl + Helm
+cd jenkins
 docker build -t jenkins-custom:latest .
 ```
 
@@ -40,7 +42,7 @@ Access Jenkins at: http://localhost:8080
 
 ### Install Required Plugins
 - Go to `Manage Jenkins` → `Plugins`
-- Install: `Docker Pipeline`, `Kubernetes`, `Kubernetes CLI`
+- Install: `Docker Pipeline`, `Kubernetes`
 
 ### Setup Kubernetes Connection
 
@@ -54,8 +56,12 @@ kubectl create token jenkins -n jenkins --duration=8760h
 1. Go to `Manage Jenkins` → `Clouds` → `New Cloud` → `Kubernetes`
 2. **Kubernetes URL:** `https://kubernetes.default.svc`
 3. **Credentials:** Add → Secret text → Paste token from above
-4. ✅ Check "Disable https certificate check"
-5. **Test Connection** → Should show ✅
+4. Check "Disable https certificate check"
+5. add credentails -> secret text -> go to section 7 for token.
+6. **Test Connection**
+7. tick websocket
+8. add jenkins url
+9. **save**
 
 ### Setup DockerHub Credentials
 
@@ -68,22 +74,25 @@ kubectl create token jenkins -n jenkins --duration=8760h
 ### Configure Build Environment Variables
 
 1. Go to `Manage Jenkins` → `Configure System` → `Global properties`
-2. Add environment variables:
-   - `AWS_ACCESS_KEY_ID`: Your AWS access key
-   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+
 
 ## 5. Create Pipeline Job
 
 1. **New Item** → **Pipeline**
 2. **Pipeline script from SCM**
-3. **Git URL:** `https://github.com/johnpham4/monitor-development-llm.git`
-4. **Script Path:** `Jenkinsfile`
-5. **Save**
+3. **This project is parameterized**
+  String parameter - `AWS_ACCESS_KEY_ID`: Your AWS access key
+  String parameter - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+4. **Git URL:** `https://github.com/johnpham4/monitor-development-llm.git`
+5. **Pipeline:** `Pipeline script from SCM` -> `Git` -> `Repository` -> `main`
+6. **Script file:** Jenkinsfile
+7. **Save**
 
 ## 6. Run Pipeline
 
-1. Click **Build Now**
-2. Pipeline will automatically:
+1. Click **Build with Parameters**
+2. **Pass the key**
+3. Pipeline will automatically:
    - Build Docker image
    - Push to DockerHub
    - Deploy to `model-serving` namespace using Helm

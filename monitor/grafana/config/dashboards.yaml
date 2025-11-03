@@ -4,8 +4,6 @@ providers:
   # QA Chatbot Dashboards Provider
 - name: 'qa-chatbot-dashboards'
   orgId: 1
-  folder: 'QA Chatbot Monitoring'
-  folderUid: 'qa-chatbot-folder'
   type: file
   disableDeletion: false
   updateIntervalSeconds: 10

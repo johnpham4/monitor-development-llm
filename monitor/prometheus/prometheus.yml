@@ -13,13 +13,6 @@ scrape_configs:
     static_configs:
       - targets: ['host.docker.internal:8001']
 
-  # FastAPI Application Instance 2
-  - job_name: 'fastapi-app-2'
-    metrics_path: /metrics
-    scrape_interval: 10s
-    static_configs:
-      - targets: ['host.docker.internal:8002']
-
   # MLflow Server Monitoring
   - job_name: 'mlflow-server'
     scrape_interval: 30s

@@ -1,46 +1,191 @@
-# Set up
-- Create a new `.env` file based on `.env.example` and populate the variables there
-- Set up env var $ROOT_DIR: `export ROOT_DIR=$(pwd) && sed "s|^ROOT_DIR=.*|ROOT_DIR=$ROOT_DIR|" .env > .tmp && mv .tmp .env`
-- Run `export $(grep -v '^#' .env | xargs)` to load the variables
-- Create a new Python 3.11.9 environment: `conda create --prefix .venv python=3.11.9`
-- Make sure Poetry use the new Python 3.11.9 environment: `poetry env use .venv/bin/python`
-- Install Python dependencies with Poetry: `poetry install`
+# Vietnamese Legal QA Chatbot
 
-# Start services
-## Common services
-```shell
-conda activate /mnt/d/projects/monitor_2_deployment/.venv
-pip install -r requirements.txt
-# Create data directory by current user to avoid permission issue when Docker Compose creates the data folder itself
-mkdir -p data
+## Introduction
 
-docker network create monitoring
+Our project focuses on implementing a Vietnamese Legal Question-Answering chatbot using fine-tuned LLM models in GGUF format. The system leverages MLOps practices with FastAPI backend, Gradio frontend, and comprehensive CI/CD pipeline using Jenkins and Kubernetes. This chatbot aims to provide accurate legal consultation in Vietnamese, making legal information more accessible to users through an intuitive web interface.
 
-# Start supporting services
-make ngrok && make ml-platform-up && make ml-platform-logs
-# Wait until you see "Booting worker with pid..." then you can Ctrl + C to exit the logs following process
+## Table of Contents
 
-apt update -y && apt install -y curl
-curl http://mlflow_server:5000
+1. **Vietnamese Legal QA Chatbot**
+   - Introduction
+   - Project Structure
+2. **Local**
+   - Demo
+   - Running in Docker
+   - Monitoring
+   - CI/CD
+3. **Production**
+   - Deploying to Kubernetes
+
+## Project Structure
+
+```
+monitor_2_deployment/
+├── demo.ipynb                     - Jupyter notebook for running the demo
+├── docker-compose.yml             - Docker Compose configuration file
+├── Dockerfile                     - Dockerfile for building the image
+├── src/                           - Directory for application source code
+│   ├── main.py                    - FastAPI backend server
+│   ├── frontend.py                - Gradio web interface
+│   └── chat_service.py            - LLM service logic
+├── jenkins/                       - Directory for Jenkins configuration
+│   ├── README.md                  - Jenkins setup guide
+│   ├── Dockerfile                 - Custom Jenkins image
+│   └── *.yaml                     - Kubernetes manifests
+├── helm/                          - Directory for Helm chart deployment
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/
+├── mlflow/                        - Directory for MLflow tracking server
+├── monitor/                       - Directory for monitoring (Prometheus, Grafana)
+├── notebook/                      - Directory for model training notebooks
+├── scripts/                       - Directory for utility scripts
+├── Jenkinsfile                    - Jenkins pipeline script for CI/CD process
+├── README.md                      - This README file
+└── requirements.txt               - Python requirements file
 ```
 
-jenkins
+# Local
 
-install kubernetes, Docker Pipeline. plugin
+First, set up the environment and install required packages:
 
-set kuberbenete nội bộ là https://kubernetes.default.svc
+**Python Version:** 3.11+
 
-Credentials
-Secret Text → paste token từ bước 2
+```bash
+- Create a new `.env` file based on `.env.example` and populate the variables there
+- Run `export $(grep -v '^#' .env | xargs)` to load the variables
+```
 
-Test Connection
-✓ chọn “Disable https certificate check” nếu self-signed
+## Running in Docker
 
-vào tạo global credential id dockerhub password = token, username = username dockerhub
+To run the application in a Docker container, build the Docker image:
 
-add websocket, jenkins url
-# Terminal 1: Backend API
-kubectl port-forward svc/txtapp 8000:8000 -n model-serving
+```bash
+docker build -t vietnamese-legal-qa .
+```
 
-# Terminal 2: Frontend Gradio
+After building the Docker image, run the container:
+
+```bash
+docker run -p 8000:8000 -p 7860:7860 vietnamese-legal-qa
+```
+
+*[Image placeholder: Docker container running]*
+
+The application will be available at:
+- **Frontend:** `http://localhost:7860`
+- **API Documentation:** `http://localhost:8000/docs`
+
+*[Image placeholder: FastAPI docs interface]*
+
+## Monitoring
+
+To monitor the system, use Prometheus and Grafana. First, start the monitoring stack:
+
+```bash
+cd monitor
+docker compose up -d
+```
+
+Access the monitoring dashboards:
+- **Prometheus:** `http://localhost:9090`
+- **Grafana:** `http://localhost:3000` (admin/admin)
+
+The Grafana dashboard displays application metrics, request rates, and system performance.
+
+*[Image placeholder: Grafana dashboard]*
+
+## CI/CD
+
+We have build and deploy stages in our CI/CD pipeline using Jenkins. The pipeline automatically triggers on code commits and deploys to Kubernetes.
+
+### Setup Jenkins
+
+For detailed Jenkins configuration, see [jenkins/README.md](jenkins/README.md)
+
+**Required Jenkins Plugins:**
+- Docker Pipeline
+- Kubernetes
+- Kubernetes CLI
+
+**Setup Credentials:**
+- DockerHub credentials
+- Kubernetes service account token
+
+*[Image placeholder: Jenkins pipeline execution]*
+
+*[Image placeholder: Local architecture diagram]*
+
+# Production
+
+## Deploying to Kubernetes
+
+Deploy the application to Kubernetes cluster using Jenkins CI/CD pipeline:
+
+### Prerequisites
+
+- Minikube or Kubernetes cluster running
+- Jenkins configured with Kubernetes access
+- DockerHub credentials configured
+
+### Deployment Process
+
+1. **Automatic Pipeline Trigger:**
+   - Push code to GitHub repository
+   - Jenkins automatically detects changes
+   - Pipeline builds Docker image and pushes to registry
+
+2. **Kubernetes Deployment:**
+   - Helm chart deploys application to `model-serving` namespace
+   - Service exposes application ports
+   - ConfigMaps and Secrets manage configuration
+
+3. **Access Production App:**
+
+```bash
+# Check deployment status
+kubectl get pods -n model-serving
+
+# Access application
 kubectl port-forward svc/txtapp 7860:7860 -n model-serving
+```
+
+The production application will be available at `http://localhost:7860`
+
+*[Image placeholder: Kubernetes deployment]*
+
+### Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Gradio UI     │───▶│   FastAPI       │───▶│   GGUF Model    │
+│   (Frontend)    │    │   (Backend)     │    │   (Vietnamese)  │
+│   Port: 7860    │    │   Port: 8000    │    │   Legal QA      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────▼─────────────┐
+                    │     Kubernetes Pod        │
+                    │   (model-serving ns)      │
+                    └───────────────────────────┘
+```
+
+### CI/CD Pipeline Flow
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    Code     │───▶│   Jenkins   │───▶│   Docker    │───▶│ Kubernetes  │
+│   (GitHub)  │    │  Pipeline   │    │   Build     │    │   Deploy    │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+*[Image placeholder: Production architecture diagram]*
+
+---
+
+**Quick Links:**
+- [Jenkins Setup Guide](jenkins/README.md)
+- [MLflow UI](http://localhost:5002) (when running)
+- [Grafana Dashboard](http://localhost:3000) (when running)
+

@@ -1,9 +1,8 @@
 version: '3.8'
 
-
 services:
-  fastapi-app:
-    container_name: fastapi_app
+  vietnamese-legal-qa:
+    container_name: vietnamese-legal-qa
     env_file:
       - .env
     build:
@@ -25,13 +24,14 @@ services:
       - "7860:7860"
     networks:
       - llm-monitor
-      # - monitoring
+      - monitoring
 
 networks:
   llm-monitor:
     external: true
-  # monitoring:
-  #   external: true
+  monitoring:
+    external: true
+    name: monitoring
 
 volumes:
   mlflow_db_data:
