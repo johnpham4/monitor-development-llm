@@ -8,12 +8,9 @@ mlflow_server:
 	docker compose -f mlflow/compose.yml up -d
 
 mlflow_url:
-	@MLFLOW_URL=$$(curl -s http://localhost:4040/api/tunnels | sed -n 's/.*"public_url":"\([^"]*\)".*/\1/p' | head -1); \
-	if [ -n "$$MLFLOW_URL" ]; then \
-		sed -i "s|^MLFLOW_TRACKING_URI=.*|MLFLOW_TRACKING_URI=$$MLFLOW_URL|" .env; \
-	else \
-		echo "No tunnel found. Try: make mlflow-debug"; \
-	fi
+	@curl -s http://localhost:4040/api/tunnels || echo "Ngrok not running on port 4040"
+	@echo "\nCurrent .env MLFLOW_TRACKING_URI:"
+	@grep MLFLOW_TRACKING_URI .env || echo "MLFLOW_TRACKING_URI not found in .env"
 
 metric:
 	docker compose -f monitor/compose.yml up -d
@@ -40,15 +37,7 @@ down:
 	docker compose -f mlflow/compose.yml down || true
 	docker compose -f compose.yml down || true
 
-# Jenkins CI/CD
-jenkins_server:
-	docker compose -f jenkins/compose.yml up -d
 
-jenkins_down:
-	docker compose -f jenkins/compose.yml down
-
-jenkins_down:
-	docker compose -f jenkins/compose.yml down
 
 jenkins_password:
 	docker exec -it jenkins-master cat /var/jenkins_home/secrets/initialAdminPassword

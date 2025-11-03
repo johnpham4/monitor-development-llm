@@ -35,10 +35,14 @@ pipeline {
                             --build-arg MODEL_NAME=${MODEL_NAME} .
                     """
 
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        sh "docker push ${DOCKER_REPOSITORY}:${IMAGE_TAG}"
-                        sh "docker tag ${DOCKER_REPOSITORY}:${IMAGE_TAG} ${DOCKER_REPOSITORY}:latest"
-                        sh "docker push ${DOCKER_REPOSITORY}:latest"
+                    // Manual Docker login and push
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh """
+                            echo \$DOCKER_PASSWORD | docker login --username \$DOCKER_USERNAME --password-stdin
+                            docker push ${DOCKER_REPOSITORY}:${IMAGE_TAG}
+                            docker tag ${DOCKER_REPOSITORY}:${IMAGE_TAG} ${DOCKER_REPOSITORY}:latest
+                            docker push ${DOCKER_REPOSITORY}:latest
+                        """
                     }
                 }
             }
