@@ -58,7 +58,7 @@ kubectl create token jenkins -n jenkins --duration=8760h
 2. **Kubernetes URL:** `https://kubernetes.default.svc`
 3. **Credentials:** Add → Secret text → Paste token from above
 4. Check "Disable https certificate check"
-5. add credentails -> secret text -> go to section 7 for token.
+5. add credentails -> secret text -> go to section 8 for token.
 6. **Test Connection**
 7. tick websocket
 8. add jenkins url
@@ -84,8 +84,93 @@ kubectl create token jenkins -n jenkins --duration=8760h
 6. **Script file:** Jenkinsfile
 7. **Save**
 
-## 6. Run Pipeline
+## 6. Setup GitHub Auto-Trigger
 
+### Enable GitHub Webhook for Auto-Build
+
+**Configure Jenkins for GitHub Integration:**
+
+1. **Install GitHub Plugin:**
+   - Go to `Manage Jenkins` → `Plugins`
+   - Install: `GitHub`, `GitHub Integration`
+
+2. **Configure GitHub Webhook:**
+   ```bash
+   # Get Jenkins webhook URL (replace with your setup)
+   # Format: http://your-jenkins-url/github-webhook/
+   kubectl port-forward svc/jenkins 8080:8080 -n jenkins
+   # Webhook URL: http://localhost:8080/github-webhook/
+   ```
+
+3. **Setup GitHub Repository Webhook:**
+   - Go to your GitHub repository: `https://github.com/johnpham4/monitor-development-llm`
+   - Navigate to `Settings` → `Webhooks` → `Add webhook`
+   - **Payload URL:** `http://your-public-jenkins-url/github-webhook/`
+   - **Content type:** `application/json`
+   - **Events:** Select `Just the push event`
+   - **Active:** Check this box
+   - Click `Add webhook`
+
+4. **Configure Jenkins Job for GitHub Trigger:**
+   - Edit your Pipeline job
+   - Go to `Build Triggers` section
+   - Check `GitHub hook trigger for GITScm polling`
+   - **Save**
+
+### Alternative: Polling Method (If webhook not accessible)
+
+If your Jenkins is not publicly accessible, use polling:
+
+1. **Configure SCM Polling:**
+   - Edit Pipeline job → `Build Triggers`
+   - Check `Poll SCM`
+   - **Schedule:** `H/5 * * * *` (poll every 5 minutes)
+   - **Save**
+
+### Expose Jenkins Publicly (For Webhook)
+
+**Option 1: Using ngrok (Development)**
+```bash
+# Install ngrok and expose Jenkins
+ngrok http 8080
+# Use the ngrok URL for GitHub webhook
+```
+
+**Option 2: Using Minikube tunnel (Local)**
+```bash
+# Expose Jenkins service
+minikube tunnel
+kubectl get svc jenkins -n jenkins
+# Use the external IP for webhook
+```
+
+### Test Auto-Trigger
+
+1. **Make a code change** in your repository
+2. **Commit and push** to main branch:
+   ```bash
+   git add .
+   git commit -m "Test auto-trigger"
+   git push origin main
+   ```
+3. **Check Jenkins** - Build should start automatically
+4. **Monitor logs** in Jenkins console output
+
+### Verify Webhook
+
+**Check GitHub webhook delivery:**
+- Go to GitHub repo → `Settings` → `Webhooks`
+- Click on your webhook → `Recent Deliveries`
+- Verify successful delivery (green checkmark)
+
+**Check Jenkins logs:**
+```bash
+kubectl logs deployment/jenkins -n jenkins | grep -i github
+```
+
+## 7. Run Pipeline
+
+### Manual Build
 1. Click **Build with Parameters**
 2. **Pass the key**
 3. Pipeline will automatically:
@@ -93,7 +178,12 @@ kubectl create token jenkins -n jenkins --duration=8760h
    - Push to DockerHub
    - Deploy to `model-serving` namespace using Helm
 
-## 7. Troubleshooting
+### Auto-Build (After GitHub integration)
+- Pipeline will trigger automatically on code push
+- Monitor build progress in Jenkins dashboard
+- Check deployment status: `kubectl get pods -n model-serving`
+
+## 8. Troubleshooting
 
 ### Jenkins can't connect to Kubernetes:
 ```bash
@@ -103,15 +193,6 @@ kubectl describe sa jenkins -n jenkins
 
 # Create new token if needed
 kubectl create token jenkins -n jenkins --duration=8760h
-```
-
-### Pipeline fails with permission errors:
-```bash
-# Check RBAC
-kubectl get clusterrolebinding jenkins-admin
-
-# Recreate if needed
-kubectl apply -f jenkins-rbac.yaml
 ```
 
 ### Docker build fails:

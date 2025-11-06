@@ -121,6 +121,8 @@ Use the model conversion notebook: [`notebook/001-model_converting.ipynb`](noteb
 
 # Local
 
+![Local Pipeline](images/pipeline.png)
+
 First, set up the environment and install required packages:
 
 **Python Version:** 3.11+
@@ -171,17 +173,10 @@ For detailed Jenkins configuration, see [jenkins/README.md](jenkins/README.md)
 
 
 **Execute Pipeline**
+| Model Downloading | Deploying to Minikube |
+|:---------------------------:|:-----------------------------:|
+| ![Model Downloading](images/jenkins_download_model.jpg) | ![Deploying to Minikube](images/jenkins_deployment_success.jpg) |
 
-![Model Downloading](images/jenkins_download_model.jpg) ![Deploying to Minikube](images/jenkins_deployment_success.jpg)
-
-### CI/CD Pipeline Flow
-
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    Code     │───▶│   Jenkins   │───▶│   Docker    │───▶│ Kubernetes  │
-│   (GitHub)  │    │  Pipeline   │    │   Build     │    │   Deploy    │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-```
 
 # Production
 
@@ -221,25 +216,6 @@ kubectl port-forward svc/txtapp 7860:7860 -n model-serving
 ```
 
 The production application will be available at `http://localhost:7860`
-
-*[Image placeholder: Kubernetes deployment]*
-
-### Architecture Overview
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Gradio UI     │───▶│   FastAPI       │───▶│   GGUF Model    │
-│   (Frontend)    │    │   (Backend)     │    │   (Vietnamese)  │
-│   Port: 7860    │    │   Port: 8000    │    │   Legal QA      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────▼─────────────┐
-                    │     Kubernetes Pod        │
-                    │   (model-serving ns)      │
-                    └───────────────────────────┘
-```
 
 ---
 
